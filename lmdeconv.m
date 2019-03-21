@@ -17,7 +17,7 @@ if(~isscalar(iters))
 end
 
 if(~exist('pre','var') || isempty(prev))
-    prev = lmobj.img;
+    prev = lmobj.initimg;
 end
 
 for i = 1:iters
