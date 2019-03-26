@@ -18,7 +18,7 @@ void init()
     mts = new mt19937_64[omp_get_max_threads()];
     for (int i = 0; i < omp_get_max_threads(); i++) 
         mts[i] = mt19937_64(rd());
-    mexPrintf("SDS:init with %d threads\n",omp_get_max_threads());
+    mexPrintf("LMSampler:init with %d threads\n",omp_get_max_threads());
 }
 
 void fini()
@@ -192,7 +192,7 @@ void sample_t(double *img, uint32_t * imgIn, const size_t* dims, int begin = 0, 
     double s = 0;
     #pragma omp parallel for reduction(+:s)
     for (int i = begin; i < finish; i++) {
-        gamma_distribution<double> randgam(imgIn[i] + 1);
+        gamma_distribution<double> randgam(imgIn[i] + 0.5);
         img[i] = randgam(mts[omp_get_thread_num()]);
         s += img[i];
     }

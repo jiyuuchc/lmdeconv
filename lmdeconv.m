@@ -1,5 +1,5 @@
 function img = lmdeconv(lmobj, iters, prev)
-% img = lmdeconv(locdata, iters, prevsample)
+% img = lmdeconv(locdata, iters, prev)
 % perform deconvolution on SMLM data
 %
 % Inputs -
@@ -16,7 +16,7 @@ if(~isscalar(iters))
     error('iters must be a scalar');
 end
 
-if(~exist('pre','var') || isempty(prev))
+if(~exist('prev','var') || isempty(prev))
     prev = lmobj.initimg;
 end
 

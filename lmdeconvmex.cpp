@@ -14,7 +14,7 @@ void iter(double* newImg, const double* hiImg, const size_t *dims, const uint32_
     size_t psfHSize = (psfSize-1)/2;
     if (finish == -1) finish = numLocs;
 
-    fill(newImg, newImg + dims[0] * dims[1], 0.5);
+    fill(newImg, newImg + dims[0] * dims[1], 0);
 
     #pragma omp parallel for
     for (int i = begin; i < finish; i ++) {
