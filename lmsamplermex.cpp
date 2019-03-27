@@ -184,7 +184,7 @@ void sample_r(uint32_t * newImg, const double* hiImg, const size_t *dims, const 
     }
 }
 
-void sample_t(double *img, uint32_t * imgIn, const size_t* dims, int begin = 0, int finish = -1)
+void sample_t(double *img, uint32_t * imgIn, const size_t* dims, double * prior, int begin = 0, int finish = -1)
 {
     int numel = dims[0] * dims[1];
     if (finish == -1) finish = numel;
@@ -192,7 +192,7 @@ void sample_t(double *img, uint32_t * imgIn, const size_t* dims, int begin = 0, 
     double s = 0;
     #pragma omp parallel for reduction(+:s)
     for (int i = begin; i < finish; i++) {
-        gamma_distribution<double> randgam(imgIn[i] + 0.5);
+        gamma_distribution<double> randgam(imgIn[i] + prior[i]);
         img[i] = randgam(mts[omp_get_thread_num()]);
         s += img[i];
     }
@@ -210,19 +210,35 @@ void sample_t(double *img, uint32_t * imgIn, const size_t* dims, int begin = 0, 
 // #3 - PSF. For image analysis, it's 2D double array. For SMLM, it's a SxSxN 3D array, representing
 //      N different kinds of PSFs with varying localization accuracy. This is because in SMLM different
 //      molecules are localized with different accuracy.
+// #4 - Optional Prior. Either a scalar or a arrray/matrix. 
 // Output -
 // #1 - The sample. A double 2D array. It is normalized (summed to be 1.0).
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
+    if ((nrhs != 3 && nrhs !=4) || nlhs != 1) {
+        mexErrMsgTxt("lmsamplermex: Wrong numer of input/output arguments");
+    }
+
     const mwSize d = mxGetNumberOfDimensions(prhs[2]);
     
     const mwSize *datadims = mxGetDimensions(prhs[0]);
     const mwSize *imgdims = mxGetDimensions(prhs[1]);
     const mwSize *psfdims = mxGetDimensions(prhs[2]);
     
-    const mxUint32 * data = mxGetUint32s(prhs[0]); 
+    const mxUint32 * data = mxGetUint32s(prhs[0]);
     const mxDouble * img = mxGetDoubles(prhs[1]);
     const mxDouble * psf = mxGetDoubles(prhs[2]);
+
+    mxDouble * prior = new mxDouble[mxGetNumberOfElements(prhs[1])];
+
+    if (nrhs == 3) {
+        fill(prior, prior + mxGetNumberOfElements(prhs[1]), 1.0);
+    } else if (mxIsScalar(prhs[3])) {
+        fill(prior, prior + mxGetNumberOfElements(prhs[1]), mxGetScalar(prhs[3]));
+    } else {
+        mxDouble * prior_in = mxGetDoubles(prhs[3]);
+        copy(prior_in, prior_in + mxGetNumberOfElements(prhs[1]), prior);
+    }
 
     // if psf is 2 2D array, assuming input data is a image
     if ( d == 2 ) {
@@ -237,7 +253,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
         sas(tmpImg1, data, datadims, scale);
         sample_r(tmpImg2, img, imgdims, tmpImg1, psf, psfdims[0]);
-        sample_t(newImg, tmpImg2, imgdims);
+        sample_t(newImg, tmpImg2, imgdims, prior);
 
         delete [] tmpImg1;
         delete [] tmpImg2;
@@ -247,8 +263,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         uint32_t * tmpImg = new uint32_t[imgdims[0] * imgdims[1]];
 
         sample_r(tmpImg, img, imgdims, data, datadims[1], psf, psfdims[0]);
-        sample_t(newImg, tmpImg, imgdims);
-        
+        sample_t(newImg, tmpImg, imgdims, prior);
+
         delete [] tmpImg;
     }
+
+    delete [] prior;
 }

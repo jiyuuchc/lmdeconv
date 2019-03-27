@@ -41,8 +41,8 @@ if (~exist('edges','var'))
     xedges = floor(min(locdata(1,:))/pixelsize)*pixelsize:pixelsize:max(locdata(1,:))+pixelsize;
     yedges = floor(min(locdata(2,:))/pixelsize)*pixelsize:pixelsize:max(locdata(2,:))+pixelsize;
 else
-    xedges = edges(1,:) * pixelsize;
-    yedges = edges(2,:) * pixelsize;
+    xedges = edges{1} * pixelsize;
+    yedges = edges{2} * pixelsize;
 end
 xbins = discretize(locdata(1,:),xedges);
 ybins = discretize(locdata(2,:),yedges);
