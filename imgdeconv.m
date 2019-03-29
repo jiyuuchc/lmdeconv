@@ -17,7 +17,9 @@ if (~exist('scale','var') || isempty(scale))
     scale = 1;
 end
 
-data = uint32(imresize(data,scale)/scale/scale);
+data = imresize(double(data),scale)/scale/scale;
+data0 = floor(data);
+data = uint32(((data - data0) > rand(size(data))) + data0);
 
 if (~exist('prev','var') || isempty(prev))
     prev = double(data);
