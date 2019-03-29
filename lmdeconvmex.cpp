@@ -43,8 +43,9 @@ void iter(double* newImg, const double* hiImg, const uint32_t * loImg, const siz
             for (int c = col ; c < col + psfSize; c++) {
                 for (int r = row ; r < row + psfSize; r++) {
                     int tmp = c * dims[0] + r;
+                    double cnts = double(loImg[i]) * bins[idx] / s;
                     #pragma omp atomic
-                        newImg[tmp] += double(loImg[i]) * bins[idx] / s;
+                        newImg[tmp] += cnts;
                     idx ++;
                 }
             }
@@ -82,8 +83,9 @@ void iter(double* newImg, const double* hiImg, const size_t *dims, const uint32_
         for (int c = col ; c < col + psfSize; c++) {
             for (int r = row ; r < row + psfSize; r++) {
                 int tmp = c * dims[0] + r;
+                double cnt = bins[idx] / s;
                 #pragma omp atomic
-                    newImg[tmp] += bins[idx] / s;
+                    newImg[tmp] += cnt;
                 idx ++;
             }
         }

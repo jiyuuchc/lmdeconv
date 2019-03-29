@@ -45,6 +45,6 @@ if (h ~= size(prev,1) || w ~= size(prev,2))
 end
 
 for i = 1:iter
-    prev = lmdeconvmex(data, prev, psf, prior);
+    prev = lmdeconvmex(data, prev, psf, double(prior));
 end
 img = prev;
