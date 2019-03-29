@@ -10,7 +10,7 @@ static void init() __attribute__ ((constructor));
 
 void init()
 {
-    mexPrintf("LMSampler:init with %d threads\n",omp_get_max_threads());
+    mexPrintf("LMDeconvmex:init with %d threads\n",omp_get_max_threads());
 }
 
 //For images
