@@ -46,5 +46,8 @@ end
 
 for i = 1:iter
     prev = lmdeconvmex(data, prev, psf, double(prior));
+    if (mod(i,10)==0)
+        disp(['Finished ' int2str(i) ' iterations']);
+    end
 end
 img = prev;

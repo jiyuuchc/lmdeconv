@@ -6,6 +6,12 @@
 #include <omp.h>
 
 using namespace std;
+static void init() __attribute__ ((constructor));
+
+void init()
+{
+    mexPrintf("LMSampler:init with %d threads\n",omp_get_max_threads());
+}
 
 //For images
 void iter(double* newImg, const double* hiImg, const uint32_t * loImg, const size_t *dims , const double * psf, const size_t psfSize, int beginCol=0, int endCol = -1)
