@@ -14,7 +14,7 @@ function dataobj = lmdatainit(varargin)
 %   img - deconv img
 
 narginchk(1,4);
-locdata = varargin{1};
+locdata = double(varargin{1});
 if (size(locdata,1) < 3)
     error('input data should have 3 rows');
 end
@@ -56,11 +56,11 @@ else
         if (range(dxedges) ~= 0 || range(dyedges) ~= 0 || dxedges(1) ~= dyedges(1))
             error('edges should be equal spacing');
         end
-        pixelsize = dxedges(1);
+        pixelsize = double(dxedges(1));
     end
 end
 
-[sigmabins, sigmaedges] = discretize(locdata(3,:),numsigmabins);
+[sigmabins, sigmaedges] = discretize(double(locdata(3,:)),numsigmabins);
 psfhsize = max(ceil(sigmaedges(end) * 5 / pixelsize), 10);
 psfsize = psfhsize * 2 + 1;
 psfs = zeros(psfsize, psfsize, length(sigmaedges)-1);
@@ -83,8 +83,8 @@ end
 img = double(padarray(img, padding, 'both'));
 
 data = zeros(3, size(locdata,2), 'uint32');
-data(1,:) = xbins + psfhsize - 1;
-data(2,:) = ybins + psfhsize - 1;
+data(1,:) = xbins + padding(1) - 1;
+data(2,:) = ybins + padding(2) - 1;
 data(3,:) = sigmabins - 1;
 
 dataobj = struct();
