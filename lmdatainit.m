@@ -61,7 +61,7 @@ else
 end
 
 [sigmabins, sigmaedges] = discretize(double(locdata(3,:)),numsigmabins);
-psfhsize = max(ceil(sigmaedges(end) * 5 / pixelsize), 10);
+psfhsize = max(ceil(sigmaedges(end) * 2.5 / pixelsize), 10);
 psfsize = psfhsize * 2 + 1;
 psfs = zeros(psfsize, psfsize, length(sigmaedges)-1);
 for i = 1:size(psfs,3)
