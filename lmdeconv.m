@@ -1,4 +1,4 @@
-function img = lmdeconv(lmobj, iters, prev)
+function img = lmdeconv(lmobj, iters, prev, prior)
 % img = lmdeconv(locdata, iters, prev)
 % perform deconvolution on SMLM data
 %
@@ -10,7 +10,7 @@ function img = lmdeconv(lmobj, iters, prev)
 % Outputs -
 %   img - deconv img
 
-narginchk(2,3);
+narginchk(2,4);
 
 if(~isscalar(iters))
     error('iters must be a scalar');
@@ -20,8 +20,12 @@ if(~exist('prev','var') || isempty(prev))
     prev = lmobj.initimg;
 end
 
+if(~exist('prior','var'))
+    prior=1;
+end
+
 for i = 1:iters
-    prev = lmdeconvmex(lmobj.data, prev, lmobj.psfs);
+    prev = lmdeconvmex(lmobj.data, prev, lmobj.psfs, prior);
     if (mod(i,10) == 0)
         disp(['finished ' int2str(i) ' iterations']);
     end
