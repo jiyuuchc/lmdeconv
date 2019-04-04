@@ -53,7 +53,7 @@ else
         yedges = edges{2};
         dxedges = diff(xedges);
         dyedges = diff(yedges);
-        if (range(dxedges) ~= 0 || range(dyedges) ~= 0 || dxedges(1) ~= dyedges(1))
+        if (range(dxedges) >1e-10  || range(dyedges) >1e-10 || dxedges(1) - dyedges(1)>1e-10)
             error('edges should be equal spacing');
         end
         pixelsize = double(dxedges(1));
