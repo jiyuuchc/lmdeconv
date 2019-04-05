@@ -25,7 +25,7 @@ if(~exist('prior','var'))
 end
 
 for i = 1:iters
-    prev = lmdeconvmex(lmobj.data, prev, lmobj.psfs, prior);
+    prev = lmdeconvmex(lmobj.data, prev, lmobj.psfs, double(prior));
     if (mod(i,10) == 0)
         disp(['finished ' int2str(i) ' iterations']);
     end
