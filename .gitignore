@@ -1,6 +1,6 @@
 *~
 *.mexa64
 *.swp
-test
-test/*
+test*
+test*/*
 
