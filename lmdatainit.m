@@ -13,7 +13,7 @@ function dataobj = lmdatainit(varargin)
 % Outputs -
 %   img - deconv img
 
-narginchk(1,4);
+narginchk(2,4);
 locdata = double(varargin{1});
 if (size(locdata,1) < 3)
     error('input data should have 3 rows');
@@ -39,29 +39,25 @@ if (length(varargin) >= 3)
     end
 end
  
-if (length(varargin) < 2)
-    pixelsize = 8;
+if (isscalar(varargin{2}))
+    pixelsize = varargin{2};
 else
-    if (isscalar(varargin{2}))
-        pixelsize = varargin{2};
-    else
-        edges = varargin{2};
-        if (~iscell(edges))
-            error('edges should be a 2-element cell array');
-        end
-        xedges = edges{1};
-        yedges = edges{2};
-        dxedges = diff(xedges);
-        dyedges = diff(yedges);
-        if (range(dxedges) >1e-10  || range(dyedges) >1e-10 || dxedges(1) - dyedges(1)>1e-10)
-            error('edges should be equal spacing');
-        end
-        pixelsize = double(dxedges(1));
+    edges = varargin{2};
+    if (~iscell(edges))
+        error('edges should be a 2-element cell array');
     end
+    xedges = edges{1};
+    yedges = edges{2};
+    dxedges = diff(xedges);
+    dyedges = diff(yedges);
+    if (range(dxedges) >1e-10  || range(dyedges) >1e-10 || dxedges(1) - dyedges(1)>1e-10)
+        error('edges should be equal spacing');
+    end
+    pixelsize = double(dxedges(1));
 end
 
 [sigmabins, sigmaedges] = discretize(double(locdata(3,:)),numsigmabins);
-psfhsize = max(ceil(sigmaedges(end) * 2.5 / pixelsize), 10);
+psfhsize = max(ceil(sigmaedges(25) * 3 / pixelsize), 10);
 psfsize = psfhsize * 2 + 1;
 psfs = zeros(psfsize, psfsize, length(sigmaedges)-1);
 for i = 1:size(psfs,3)
@@ -94,3 +90,4 @@ dataobj.psfs = double(psfs);
 dataobj.pixelsize = pixelsize;
 dataobj.origin = locdata;
 dataobj.edges = {xedges, yedges};
+dataobj.padding=padding;
