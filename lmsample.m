@@ -45,7 +45,7 @@ for i = 1:iters * skip
     if (mod(i,skip)==0)
         samples(:,:,i/skip) = prev;
     end
-    if (mod(i,100) == 0)
+    if (mod(i,1000) == 0)
         disp(['finished ' int2str(i) ' iterations']);
     end
 end

@@ -11,7 +11,7 @@ function dataobj = lmdatainit(varargin)
 %   numsigmabins - Optional. default 50.
 %
 % Outputs -
-%   img - deconv img
+%  dataobj - Object encapsulating necessary data for further analyses
 
 narginchk(2,4);
 locdata = double(varargin{1});
