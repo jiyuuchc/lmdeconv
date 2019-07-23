@@ -3,12 +3,13 @@ load('testdata_ring');
 space = [2000, 600, 200];
 figure;
 colormap('gray');
-subplot(4,3,1);
+ntests = length(space);
+subplot(ntests+1,3,1);
 imagesc(img0(473-139:473+139, 473-139:473+139));
 axis equal; axis off; 
 edges{1}=-40:1.6:40;
 edges{2}=-40:1.6:40;
-ntests = length(space);
+
 for i = 1:ntests
 
     data0=data(:,1:space(i):end);
@@ -18,7 +19,7 @@ for i = 1:ntests
 
     % plot original data
     subplot(ntests+1,3,1 + i*3);
-    imagesc(crop(lmobj.initimg));
+    imagesc(crop(histimg(lmobj)));
     axis equal; axis off;
 
 

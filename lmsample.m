@@ -14,10 +14,6 @@ function samples = lmsample(lmobj, iters, prev, skip, prior)
 
 narginchk(2,5);
 
-if (~exist('prior','var'))
-    prior = 1.0;
-end
-
 if (~exist('skip','var'))
     skip = 1;
 else
@@ -31,19 +27,30 @@ if(~isscalar(iters))
 end
 
 if(~exist('prev','var') || isempty(prev))
-    prev = lmobj.initimg;
+    prev = histimg(lmobj);
 end
 
+if (~exist('prior','var'))
+    prior = 1/2; % Jeffreys prior
+end
 if (~isscalar(prior) && numel(prior) ~= numel(prev))
     error('Prior size does not match image');
 end
 
-[h,w] = size(prev);
-samples = zeros(h,w,iters);
+
+samplesize = [size(prev) iters];
+samples = zeros(samplesize);
 for i = 1:iters * skip
-    prev = lmsamplermex(lmobj.data, prev, lmobj.psfs, double(prior));
-    if (mod(i,skip)==0)
-        samples(:,:,i/skip) = prev;
+    if (length(lmobj.imgsize) == 2)
+        prev = lmsamplermex(lmobj.data, prev, lmobj.psfs, double(prior));
+        if (mod(i,skip)==0)
+            samples(:,:,i/skip) = prev;
+        end
+    else
+        prev = lmsampler3dmex(lmobj.data, prev, lmobj.psfs, lmobj.zpsfs, double(prior));
+        if (mod(i,skip)==0)
+            samples(:,:,:,i/skip) = prev;
+        end
     end
     if (mod(i,1000) == 0)
         disp(['finished ' int2str(i) ' iterations']);
