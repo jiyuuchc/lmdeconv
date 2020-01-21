@@ -19,10 +19,11 @@ end
 
 data = imresize(double(data),scale)/scale/scale;
 data0 = floor(data);
-data = uint32(((data - data0) > rand(size(data))) + data0);
+% data = uint32(((data - data0) > rand(size(data))) + data0);
+data = uint32(data0);
 
 if (~exist('prev','var') || isempty(prev))
-    prev = double(data);
+    prev = ones(size(data));
 end
 
 if (exist('prior', 'var') && ~isempty(prior))
@@ -44,10 +45,12 @@ if (h ~= size(prev,1) || w ~= size(prev,2))
     error('wrong prev size');
 end
 
+tic
 for i = 1:iter
     prev = lmdeconvmex(data, prev, psf, double(prior));
     if (mod(i,10)==0)
         disp(['Finished ' int2str(i) ' iterations']);
     end
 end
+toc
 img = prev;
