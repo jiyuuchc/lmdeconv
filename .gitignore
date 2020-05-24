@@ -1,6 +1,7 @@
 *~
-*.mexa64
+*.mex*
 *.swp
+*.asv
 test*
 test*/*
 
