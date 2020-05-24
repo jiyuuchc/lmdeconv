@@ -16,7 +16,7 @@ function dataobj = lmdatainit(varargin)
 narginchk(2,4);
 locdata = double(varargin{1});
 if (size(locdata,1) < 3)
-    error('input data should have 3 rows');
+    error('input data should have at least 3 rows');
 end
 
 if (size(locdata,1) == 5) 
@@ -135,6 +135,6 @@ dataobj.imgsize = [length(yedges)-1+padding(2)*2, length(xedges)-1+padding(1)*2]
 if (is3d)
     dataobj.zpsfs = zpsfs;
     dataobj.pixelsize = [pixelsize, zpixelsize];
-    dataobj.edges = {xedges, yedges,zedges};
+    dataobj.edges = {xedges, yedges, zedges};
     dataobj.imgsize = [dataobj.imgsize, length(zedges)-1+padding(3)*2];
 end

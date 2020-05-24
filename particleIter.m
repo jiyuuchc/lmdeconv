@@ -1,14 +1,24 @@
-function [newParticles ,fval]=particleIter(particles, pixelSize, nsamples, scale, prior)
-% newParticles =particleIter(particles, pixelSize, nsamples, prior)
+function [newParticles, fval]=particleIter(particles, pixelSize, nsamples, scale, prior)
+% newParticles = particleIter(particles, pixelSize, nsamples, scale)
+% Perform particle registration using SMLM data. This function can be
+% called multiple times to iteratively improve the registration
 % Input:
-%   particles: cell arrray of particel data (Nx3 matrix);Discretized.
+%   particles: cell array of particle data (Nx3 matrix);Discretized.
 %   pixelSize : pixelsize used for theta samples. 
 %   nsamples: number of samples drawn
-%   scale: increase sigma by a factor, helps to speed up convergence
-%   prior: prior alpha0
+%   scale: scale sigma by a factor, may improve convergence. default to 1.
+% Output:
+%   newParticles: New particle coordinates with improved registration
+
+skipping = 5; % skip every 5 samples to improve mixing
+burn_in = 2000; % take 2000 samples as burn in
 
 if(~exist('prior','var'))
     prior = 1;
+end
+
+if (~exist('scale','var'))
+    scale = 1.0;
 end
 
 alldata = cat(1, particles{:});
@@ -17,12 +27,12 @@ lmobj = lmdatainit(alldata', pixelSize);
 
 disp('Sampling');
 tic;
-s = lmsample(lmobj,1,[],1,prior);
+s = lmsample(lmobj,burn_in,[],burn_in,prior);
 l=zeros(size(s,1),size(s,2),size(lmobj.psfs,3));
 
-for k = 1:1000:nsamples*5
+for k = 1:1000:nsamples
     nn = min(1000,nsamples-k+1);
-    samples = lmsample(lmobj, nn, s, 5, prior);
+    samples = lmsample(lmobj, nn, s, skipping, prior);
     s = samples(:,:,end);
     
     tmp = samples;

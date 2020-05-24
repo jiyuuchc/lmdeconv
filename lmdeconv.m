@@ -1,12 +1,12 @@
 function img = lmdeconv(lmobj, iters, prev, prior)
-% img = lmdeconv(locdata, iters, prev)
-% perform deconvolution on SMLM data
-%
+% img = lmdeconv(locdata, iters, prev, prior)
+% Perform statitically accurate rendering of SMLM data using ML estimator
+% 
 % Inputs -
 %   lmobj - Object returned by the lmdatainit() function
 %   iter - # of iterations
-%   prev - result from previos iteration
-%
+%   prev - result from previos call of this function. Optional
+%   priot - Dirichlet prior, Optional.
 % Outputs -
 %   img - deconv img
 

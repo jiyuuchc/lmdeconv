@@ -1,5 +1,10 @@
-function img=gausImgRendr(lmobj)
+function img=gausimg(lmobj)
+% img = gausimg(lmobj)
 % render Gaussian spot image using lmobj as input
+% input:
+%   lmobj: SMLM data object (see lmdatainit )
+% output:
+%   img: Rendered image.
 
 img = zeros(size(lmobj.initimg));
 [h0,w0]=size(img);

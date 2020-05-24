@@ -1,4 +1,10 @@
 function img = histimg(lmobj)
+% img = histimg(lmobj)
+% render histogram representation of image using lmobj as input
+% input:
+%   lmobj: SMLM data object (see lmdatainit )
+% output:
+%   img: Rendered image.
 
 img = zeros(lmobj.imgsize);
 if (length(lmobj.imgsize) == 2)
