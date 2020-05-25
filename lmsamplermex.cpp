@@ -18,44 +18,46 @@ void init()
     mts = new mt19937_64[omp_get_max_threads()];
     for (int i = 0; i < omp_get_max_threads(); i++) 
         mts[i].seed(rd());
-    // mexPrintf("LMSampler:init with %d threads\n",omp_get_max_threads());
+    mexPrintf("LMSampler:init with %d threads\n",omp_get_max_threads());
 }
 
 void fini()
 {
     delete [] mts;
-    mexPrintf("SDS:exit\n");
+    mexPrintf("LMSampler:exit\n");
 }
 
-void sample_r(uint32_t * newImg, const double* hiImg, const size_t *dims, const uint32_t *locs, const size_t numLocs, const double * psfs,const size_t psfSize, int begin=0, int finish=-1)
-{
+void sample_r(uint32_t * newImg, const mxArray * data, const mxArray * sample, const mxArray * psfs) {
     uniform_real_distribution<> rand(0, 1);
-    
-    size_t psfHSize = (psfSize-1)/2;
-    if (finish == -1) finish = numLocs;
+    const mwSize * imgDims = mxGetDimensions(sample);
+    const mwSize * dataDims = mxGetDimensions(data);
+    size_t nLocs = dataDims[1];
 
-    //mexPrintf("Sample_R \n");
-    //mexPrintf("Img dimension %d - %d\n", dims[0], dims[1]);
-    //mexPrintf("Psf dimension %d\n", psfSize);
-    //mexPrintf("Num of locs %d\n", numLocs);
-    
-    fill(newImg, newImg + dims[0] * dims[1], 0);
+    uint32_t * dataBuf = mxGetUint32s(data);
+    double * sampleBuf = mxGetDoubles(sample);
+        
+    // fill(newImg, newImg + dims[0] * dims[1], 0);
 
     #pragma omp parallel for
-    for (int i = begin; i < finish; i ++) {
-        double bins[psfSize*psfSize + 1];
+    for (int i = 0; i < nLocs; i ++) {
+        uint32_t psfIdx = dataBuf[i*3+2];
+        mxArray * psf = mxGetCell(psfs, psfIdx);
+        double * psfBuf = mxGetDoubles(psf);
+        size_t psfSize = mxGetDimensions(psf)[0];
+        size_t psfHSize = (psfSize-1)/2;
+
+        double * bins = new double[psfSize*psfSize + 1];
         
-        int32_t row = locs[i*3+1] - psfHSize;
-        int32_t col = locs[i*3] - psfHSize;
-        const double * psf = psfs + locs[i*3+2] * psfSize * psfSize;
+        int32_t row = dataBuf[i*3+1] - psfHSize;
+        int32_t col = dataBuf[i*3] - psfHSize;
         
-        if (row < 0 || col < 0 || row + psfSize >= dims[0] || col + psfSize >= dims[1]) continue;
+        if (row < 0 || col < 0 || row + psfSize >= imgDims[0] || col + psfSize >= imgDims[1]) continue;
 
         int idx = 0;
         bins[0] = 0;
         for (int c = col ; c < col + psfSize; c++) {
             for (int r = row ; r < row + psfSize; r++) {
-                bins[idx + 1] = bins[idx] + hiImg[c * dims[0] + r] * psf[idx];
+                bins[idx + 1] = bins[idx] + sampleBuf[c * imgDims[0] + r] * psfBuf[idx];
                 idx ++;
             }
         }
@@ -77,41 +79,43 @@ void sample_r(uint32_t * newImg, const double* hiImg, const size_t *dims, const 
                 break;
             }
         }
+        delete [] bins;
+
         int rr = idx % psfSize;
         int cc = idx / psfSize;
-        int tmp = row + rr + (col+cc) * dims[0];
+        int tmp = row + rr + (col+cc) * imgDims[0];
 
         #pragma omp atomic
         newImg[tmp] ++;
     }
 }
 
-void sample_t(double *img, uint32_t * imgIn, const size_t* dims, double * prior, int begin = 0, int finish = -1)
+void sample_t(mxArray *img, uint32_t * imgIn, double * prior)
 {
-    int numel = dims[0] * dims[1];
-    if (finish == -1) finish = numel;
-    
+    size_t numPixels = mxGetNumberOfElements(img);
+    double * imgBuf = mxGetDoubles(img);
+
     double s = 0;
+    
     #pragma omp parallel for reduction(+:s)
-    for (int i = begin; i < finish; i++) {
+    for (int i = 0; i < numPixels; i++) {
         gamma_distribution<double> randgam(imgIn[i] + prior[i]);
-        img[i] = randgam(mts[omp_get_thread_num()]);
-        s += img[i];
+        imgBuf[i] = randgam(mts[omp_get_thread_num()]);
+        s += imgBuf[i];
     }
 
     #pragma omp parallel for
-    for (int i = begin; i < finish; i++) {
-        img[i] /= s;
+    for (int i = 0; i < numPixels; i++) {
+        imgBuf[i] /= s;
     }    
 }
 
 // Input -
-// #1 - UINT32 Data. Either a low resolution image, or a 3XN array of SMLM data. 
-//      If it's latter, row 1 is x, row 2 is y, row 3 is a index to psf array (see input #3)
+// #1 - UINT32 Data. 3XN array of SMLM data. 
+//      row 1 is x, row 2 is y, row 3 is a index to psf array (see input #3)
 // #2 - The image sample from last itration
-// #3 - PSF. SxSxN 3D array, representing N different kinds of PSFs with 
-//      varying localization accuracy. This is because in SMLM different
-//      molecules are localized with different accuracy.
+// #3 - Cached PSFs. cell array, representing N different kinds of PSFs with 
+//      varying localization accuracy
 // #4 - Optional Prior. Either a scalar or a arrray/matrix. 
 // Output -
 // #1 - The sample. A double 2D array. It is normalized (summed to be 1.0).
@@ -121,18 +125,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mexErrMsgTxt("lmsamplermex: Wrong numer of input/output arguments");
     }
 
-    const mwSize d = mxGetNumberOfDimensions(prhs[2]);
-    
-    const mwSize *datadims = mxGetDimensions(prhs[0]);
-    const mwSize *imgdims = mxGetDimensions(prhs[1]);
-    const mwSize *psfdims = mxGetDimensions(prhs[2]);
-    
-    const mxUint32 * data = mxGetUint32s(prhs[0]);
-    const mxDouble * img = mxGetDoubles(prhs[1]);
-    const mxDouble * psf = mxGetDoubles(prhs[2]);
-
     mxDouble * prior = new mxDouble[mxGetNumberOfElements(prhs[1])];
-
     if (nrhs == 3) {
         fill(prior, prior + mxGetNumberOfElements(prhs[1]), 1.0);
     } else if (mxIsScalar(prhs[3])) {
@@ -142,12 +135,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         copy(prior_in, prior_in + mxGetNumberOfElements(prhs[1]), prior);
     }
 
-    plhs[0] = mxCreateDoubleMatrix(imgdims[0], imgdims[1], mxREAL);
-    mxDouble * newImg = mxGetDoubles(plhs[0]);
-    uint32_t * tmpImg = new uint32_t[imgdims[0] * imgdims[1]];
+    const mwSize * imgDims = mxGetDimensions(prhs[1]);
+    plhs[0] = mxCreateDoubleMatrix(imgDims[0], imgDims[1], mxREAL);
+    uint32_t * tmpImg = new uint32_t[imgDims[0] * imgDims[1]];
+    fill(tmpImg, tmpImg + imgDims[0] * imgDims[1], 0);
 
-    sample_r(tmpImg, img, imgdims, data, datadims[1], psf, psfdims[0]);
-    sample_t(newImg, tmpImg, imgdims, prior);
+    sample_r(tmpImg, prhs[0], prhs[1], prhs[2]);
+    sample_t(plhs[0], tmpImg, prior);
 
     delete [] tmpImg;
     delete [] prior;

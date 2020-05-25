@@ -84,19 +84,21 @@ if (is3d)
 end
 
 [sigmabins, sigmaedges] = discretize(double(locdata(3,:)),numsigmabins);
-psfhsize = max(ceil(sigmaedges(end) * 2 / pixelsize), 10);
-psfsize = psfhsize * 2 + 1;
-psfs = zeros(psfsize, psfsize, length(sigmaedges)-1);
-for i = 1:size(psfs,3)
-    psfs(:,:,i) = fspecial('gaussian', psfsize, 0.5 /pixelsize * (sigmaedges(i) + sigmaedges(i+1)));
+psfs = cell(length(sigmaedges)-1,1);
+for i = 1:size(psfs,1)
+    sigma = 0.5 /pixelsize * (sigmaedges(i) + sigmaedges(i+1));
+    psfhsize = round(sigma * 1.5);
+    psfsize = psfhsize * 2 + 1;
+    psfs{i} = fspecial('gaussian', psfsize, sigma);
 end
 
+%FIXME this is broken
 if (is3d)
     [zsigmabins, zsigmaedges] = discretize(double(locdata(5,:)),numsigmabins);
     psfzhsize = max(ceil(zsigmaedges(end) * 2 / zpixelsize), 10);
     zpsfsize = psfzhsize * 2 + 1;
     zpsfs = zeros(zpsfsize, length(sigmaedges)-1);
-    for i = 1:size(psfs,3)
+    for i = 1:size(psfs,1)
         zpsfs(:,i) = sum(fspecial('gaussian', zpsfsize, 0.5 /zpixelsize * (zsigmaedges(i) + zsigmaedges(i+1))),2);
         %zpsfs(:,i) = normpdf((-psfzhsize:psfzhsize) * zpixelsize, 0, (zsigmaedges(i)+zsigmaedges(i+1))/2);
     end
@@ -125,7 +127,7 @@ end
 dataobj = struct();
 dataobj.data = uint32(data);
 %dataobj.initimg = double(img);
-dataobj.psfs = double(psfs);
+dataobj.psfs = psfs;
 dataobj.pixelsize = pixelsize;
 dataobj.origin = locdata;
 dataobj.edges = {xedges, yedges};
