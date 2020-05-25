@@ -27,17 +27,16 @@ lmobj = lmdatainit(alldata', pixelSize);
 
 disp('Sampling');
 tic;
-s = lmsample(lmobj,burn_in,[],burn_in,prior);
-l=zeros(size(s,1),size(s,2),size(lmobj.psfs,3));
-
+s = lmsample(lmobj,1,[],burn_in,prior);
+l = zeros([size(s) length(lmobj.psfs)]);
 for k = 1:1000:nsamples
     nn = min(1000,nsamples-k+1);
     samples = lmsample(lmobj, nn, s, skipping, prior);
     s = samples(:,:,end);
     
-    tmp = samples;
-    for j = 1:size(lmobj.psfs,3)
-        psf = lmobj.psfs(:,:,j);
+    tmp = zeros(size(samples));
+    for j = 1:length(lmobj.psfs)
+        psf = lmobj.psfs{j};
         for i = 1:size(samples,3)
             tmp(:,:,i) = filter2(psf, samples(:,:,i)+eps);
         end
@@ -55,7 +54,7 @@ for i = 1:length(particles)
     %HACKISH
     tmp = double(lmobj.data(:, idx:idx+nlocs-1));
     idx = idx + nlocs;
-    [p, fval(i)] = fminunc(@(p) costfunc(p, tmp, l), [0 0 0]);
+    [p, fval(i)] = fminunc(@(p) costfunc(p, tmp', l), [0 0 0]);
     t = affine2d([cos(p(3)) sin(p(3)) 0; -sin(p(3)) cos(p(3)) 0; p(1) p(2) 1]);
     tmp = double(particles{i});
     tmp(:,1:2)= t.transformPointsForward(tmp(:,1:2));
