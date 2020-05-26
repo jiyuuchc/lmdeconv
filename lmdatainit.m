@@ -129,14 +129,20 @@ dataobj.data = uint32(data);
 %dataobj.initimg = double(img);
 dataobj.psfs = psfs;
 dataobj.pixelsize = pixelsize;
-dataobj.origin = locdata;
-dataobj.edges = {xedges, yedges};
+%dataobj.origin = locdata;
+%dataobj.edges = {xedges, yedges};
 dataobj.padding=padding;
 dataobj.imgsize = [length(yedges)-1+padding(2)*2, length(xedges)-1+padding(1)*2];
+dataobj.X = (0:dataobj.imgsize(2)-1)*pixelsize + xedges(1) - padding(1) * pixelsize + pixelsize /2;
+dataobj.Y = (0:dataobj.imgsize(1)-1)*pixelsize + yedges(1) - padding(2) * pixelsize + pixelsize /2;
+
+dataobj.S = (sigmaedges(1:end-1) + sigmaedges(2:end))/2;
 
 if (is3d)
     dataobj.zpsfs = zpsfs;
     dataobj.pixelsize = [pixelsize, zpixelsize];
-    dataobj.edges = {xedges, yedges, zedges};
+    % dataobj.edges = {xedges, yedges, zedges};
     dataobj.imgsize = [dataobj.imgsize, length(zedges)-1+padding(3)*2];
+    dataobj.Z = (0:dataobj.imgsize(3)-1)*zpixelsize + zedges(1) - padding(3) * zpixelsize + zpixelsize / 2;
+    dataobj.SZ = (zsigmaedges(1:end-1) + zsigmaedges(2:end))/2;
 end
