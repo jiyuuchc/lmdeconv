@@ -22,13 +22,13 @@ Read your particle data into a cell array (e.g., particles). Each cell stores on
 target = particle{1} % choose any particle, presumbly one with good data quality 
 pixelsize = 1.0 % choose a pixelsize for rendering. Same unit as your particle data
 nsamples = 5000 % how many samples to be drawn to build a alignement template
-particle = particleIter(particles, pixelsize, nsamples, 'Target', target)
+particles = particleIter(particles, pixelsize, nsamples, 'Target', target)
 ```
 
 ##### 4. Register iteration
 Performing global registration.
 ```
-particle = particleIter(particles, pixelsize, nsamples)
+particles = particleIter(particles, pixelsize, nsamples)
 ```
 This command should be run multiple times, which improve alignment iteratively.
 
