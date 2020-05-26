@@ -9,7 +9,8 @@ Matlab with image processing and optimization toolbox. I've only tested on Linux
 ### Usage: Paricle Fusion workflow
 
 ##### 1. Build
-Make sure you have gcc C-comiler installed. On windows, it is easiest to use the "AddOn..." menu option, and search for Cygwin. Then in Matlab, run
+Make sure you have gcc C-comiler installed. On windows, it is easiest to use the "AddOn..." menu option, and search for Cygwin. 
+In Matlab, run
 ```
 build
 ```
