@@ -1,11 +1,12 @@
 function [t, fval] = fit_ps(particle, template, lmobj)
+gcp;
 ds = lmobj.S(2)-lmobj.S(1);
 sigmaedges = [lmobj.S - ds/2, inf];
 particle(:,3) = discretize(particle(:,3),sigmaedges);
 sy = lmobj.imgsize(1) / 2 * lmobj.pixelsize;
 sx = lmobj.imgsize(2) / 2 * lmobj.pixelsize;
 %options = optimoptions('particleswarm','SwarmSize',100,'HybridFcn',@fmincon);
-options = optimoptions('particleswarm','SwarmSize',100);
+options = optimoptions('particleswarm','SwarmSize',100,'UseParallel',true);
 func = @(p) costfunc(p, particle, template, lmobj.X, lmobj.Y, 1:size(template,3));
 [p, fval] = particleswarm(func, 3, [-sx,-sy,-pi],[sx,sy,pi], options);
 t = affine2d([cos(p(3)) sin(p(3)) 0; -sin(p(3)) cos(p(3)) 0; p(1) p(2) 1]);
