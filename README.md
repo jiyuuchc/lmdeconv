@@ -1,5 +1,5 @@
 ## lmdeconv
-The software implements a few algorithms for SMLM (single molecule localization microscopy). 
+The software implements a few algorithms for SMLM (single molecule localization microscopy) data analysis. 
 It includes a sampler, a function to perform MAP estiamtion of molecular distribution, and a particle fusion algorithm.
 
 **Ref:** DOI: 10.1073/pnas.1912634116
@@ -22,7 +22,7 @@ Read your particle data into a cell array (e.g., particles). Each cell stores on
 ```
 target = particle{1} % choose any particle, presumbly one with good data quality 
 pixelsize = 1.0 % choose a pixelsize for rendering. Same unit as your particle data
-nsamples = 20000 % how many samples to be drawn to build a alignement template
+nsamples = 20000 % how many samples to be drawn to build an alignement template
 
 particles = particleIter(particles, pixelsize, nsamples, 'Target', target)
 ```
@@ -32,7 +32,7 @@ Performing global registration.
 ```
 particles = particleIter(particles, pixelsize, nsamples)
 ```
-This command should be run multiple times, which improve alignment iteratively.
+This command should be run multiple times, which improves the alignment iteratively.
 
 ##### 5. Check fusion result
 ```
