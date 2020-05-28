@@ -92,7 +92,7 @@ for m = 1:nModels
             end
             l(:,:,j) = l(:,:,j) + mean(log(tmp),3);
         end
-        disp(['Drawn ' int2str(k) ' samples.']);
+        disp(['Drawn ' int2str(k+999) ' samples.']);
     end
     template{m} = l;
     disp('Sampling...done');
