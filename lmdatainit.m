@@ -1,148 +1,95 @@
-function dataobj = lmdatainit(varargin)
-% dataobj = lmdatainit(locdata, pixelsize, padding, numsigmabins)
-% dataobj = lmdatainit(locdata, edges, padding, numsigmabins)
+function dataobj = lmdatainit(locdata, template, varargin)
+% dataobj = lmdatainit(locdata, pixelsize ...)
+% dataobj = lmdatainit(locdata, template)
 % Prepare data to be used for other fuctions
 %
 % Inputs -
 %   locdata - 3 x N matrix. X, Y, Sigma. In same unit (e.g. nm)
 %   pixlesize - the pixel size of the image to be rendered
-%   edges - Bin edges used to discretize localization data.
-%   padding - Optional. 
-%   numsigmabins - Optional. default 50.
+%   template - create new dataobj using the pixel arrangement of and old
+%              dataobj template
+%   Optional parameters (these are ignored in the 2nd calling form):
+%       padding - Optional. default to half of the biggest psf. 
+%       numsigmabins - Optional. default 50.
 %
 % Outputs -
-%  dataobj - Object encapsulating necessary data for further analyses
+%   dataobj - Object encapsulating necessary data for further analyses
 
-narginchk(2,4);
-locdata = double(varargin{1});
-if (size(locdata,1) < 3)
-    error('input data should have at least 3 rows');
+parser = inputParser;
+addRequired(parser, 'data', @(p) ismatrix(p) && (size(p,1)==3 || size(p,2)==3));
+addRequired(parser, 'template', @(p) (isnumeric(p) && isscalar(p)) || isstruct(p));
+addParameter(parser, 'padding', [], @(p) isscalar(p) || (isvector(p) && length(p)==2));
+addParameter(parser, 'nsigmabins', 50, @(p) isscalr(p) && p > 0);
+
+parse(parser, locdata, template, varargin{:});
+
+locdata = double(locdata);
+if size(locdata,1) ~= 3
+    locdata = locdata';
 end
 
-if (size(locdata,1) == 5) 
-    is3d = true;
-else
-    is3d = false;
-end
-
-if (length(varargin) < 4)
-    numsigmabins = 50;
-else
-    numsigmabins = varargin{4};
-end
-
-if(~isscalar(numsigmabins))
-    error('numsigmabins must be a scalar');
-end
-
-if (length(varargin) >= 3)
-    padding = varargin{3};
-    if (isscalar(padding))
-        padding = [padding padding];
-    end
-    if (length(padding) ~= 2)
-        error('Wrong padding size');
-    end
-end
- 
-if (~iscell(varargin{2}))
-    tmp = varargin{2};
-    pixelsize = tmp(1);
+if ~isstruct(template) % 2nd input is pixelsize
+    pixelsize = template;
+    
     xedges = floor(min(locdata(1,:))/pixelsize)*pixelsize:pixelsize:max(locdata(1,:))+pixelsize;
-    yedges = floor(min(locdata(2,:))/pixelsize)*pixelsize:pixelsize:max(locdata(2,:))+pixelsize;    
-    if (is3d)
-        zpixelsize = tmp(2);
-        zedges = floor(min(locdata(4,:))/zpixelsize)*zpixelsize:zpixelsize:max(locdata(4,:))+zpixelsize;
-    end
-else
-    edges = varargin{2};
-    if (~iscell(edges))
-        error('edges should be a cell array');
-    end
-    xedges = edges{1};
-    yedges = edges{2};
-    dxedges = diff(xedges);
-    dyedges = diff(yedges);
-    if (range(dxedges) >1e-10  || range(dyedges) >1e-10 || dxedges(1) - dyedges(1)>1e-10)
-        error('edges should be equal spacing');
-    end
-    pixelsize = double(dxedges(1));
-    if (is3d)
-        zedges = edges{3};
-        dzedges = diff(zedges);
-        if (range(dzedges) > 1e-10)
-            error('edges should be equal spacing');
-        end
-        zpixelsize = double(dzedges(1));
-    end
-end
+    yedges = floor(min(locdata(2,:))/pixelsize)*pixelsize:pixelsize:max(locdata(2,:))+pixelsize;
+    xbins = discretize(locdata(1,:),xedges);
+    ybins = discretize(locdata(2,:),yedges);
+    
+    [sigmabins, sigmaedges] = discretize(double(locdata(3,:)),parser.Results.nsigmabins);
 
-xbins = discretize(locdata(1,:),xedges);
-ybins = discretize(locdata(2,:),yedges);
-if (is3d)
-    zbins = discretize(locdata(4,:), zedges);
-end
-
-[sigmabins, sigmaedges] = discretize(double(locdata(3,:)),numsigmabins);
-psfs = cell(length(sigmaedges)-1,1);
-for i = 1:size(psfs,1)
-    sigma = 0.5 /pixelsize * (sigmaedges(i) + sigmaedges(i+1));
-    psfhsize = round(sigma * 1.5);
-    psfsize = psfhsize * 2 + 1;
-    psfs{i} = fspecial('gaussian', psfsize, sigma);
-end
-
-%FIXME this is broken
-if (is3d)
-    [zsigmabins, zsigmaedges] = discretize(double(locdata(5,:)),numsigmabins);
-    psfzhsize = max(ceil(zsigmaedges(end) * 2 / zpixelsize), 10);
-    zpsfsize = psfzhsize * 2 + 1;
-    zpsfs = zeros(zpsfsize, length(sigmaedges)-1);
+    psfs = cell(length(sigmaedges)-1,1);
     for i = 1:size(psfs,1)
-        zpsfs(:,i) = sum(fspecial('gaussian', zpsfsize, 0.5 /zpixelsize * (zsigmaedges(i) + zsigmaedges(i+1))),2);
-        %zpsfs(:,i) = normpdf((-psfzhsize:psfzhsize) * zpixelsize, 0, (zsigmaedges(i)+zsigmaedges(i+1))/2);
+        sigma = 0.5 /pixelsize * (sigmaedges(i) + sigmaedges(i+1));
+        psfhsize = round(sigma * 1.5);
+        psfsize = psfhsize * 2 + 1;
+        psfs{i} = fspecial('gaussian', psfsize, sigma);
     end
-end
-
-if (~exist('padding','var'))
-    if (~is3d)
+    
+    padding = parser.Results.padding;
+    if isempty(padding)
         padding = [psfhsize, psfhsize];
     else
-        padding = [psfhsize, psfhsize, psfzhsize];
+        if isscalar(padding)
+            padding = [padding padding];
+        end
     end
-end
 
-%data = zeros(3, size(locdata,2), 'uint32');
-data(1,:) = xbins + padding(1) - 1;
-data(2,:) = ybins + padding(2) - 1;
-data(3,:) = sigmabins - 1;
-if (is3d)
-    data(4,:) = zbins + padding(3) -1;
-    data(5,:) = zsigmabins - 1;
-end
+    data = zeros(3, length(xbins));
+    data(1,:) = xbins + padding(1) - 1;
+    data(2,:) = ybins + padding(2) - 1;
+    data(3,:) = sigmabins - 1;
+    
+    dataobj = struct();
+    dataobj.data = uint32(data);
+    dataobj.psfs = psfs;
+    dataobj.pixelsize = pixelsize;
+    dataobj.padding=padding;
+    dataobj.imgsize = [length(yedges)-1+padding(2)*2, length(xedges)-1+padding(1)*2];
+    dataobj.X = (0:dataobj.imgsize(2)-1)*pixelsize + xedges(1) - padding(1) * pixelsize + pixelsize /2;
+    dataobj.Y = (0:dataobj.imgsize(1)-1)*pixelsize + yedges(1) - padding(2) * pixelsize + pixelsize /2;
+    dataobj.S = (sigmaedges(1:end-1) + sigmaedges(2:end))/2;
+else % 2nd input is a dataobj
+    dataobj = template;
+    xedges = dataobj.X - dataobj.pixelsize / 2;
+    yedges = dataobj.Y - dataobj.pixelsize / 2;
 
-%img = histcounts2(locdata(2,:), locdata(1,:), yedges, xedges);
-%img = double(padarray(img, padding, 'both'));
-
-dataobj = struct();
-dataobj.data = uint32(data);
-%dataobj.initimg = double(img);
-dataobj.psfs = psfs;
-dataobj.pixelsize = pixelsize;
-%dataobj.origin = locdata;
-%dataobj.edges = {xedges, yedges};
-dataobj.padding=padding;
-dataobj.imgsize = [length(yedges)-1+padding(2)*2, length(xedges)-1+padding(1)*2];
-dataobj.X = (0:dataobj.imgsize(2)-1)*pixelsize + xedges(1) - padding(1) * pixelsize + pixelsize /2;
-dataobj.Y = (0:dataobj.imgsize(1)-1)*pixelsize + yedges(1) - padding(2) * pixelsize + pixelsize /2;
-
-dataobj.S = (sigmaedges(1:end-1) + sigmaedges(2:end))/2;
-
-if (is3d)
-    dataobj.zpsfs = zpsfs;
-    dataobj.pixelsize = [pixelsize, zpixelsize];
-    % dataobj.edges = {xedges, yedges, zedges};
-    dataobj.imgsize = [dataobj.imgsize, length(zedges)-1+padding(3)*2];
-    dataobj.Z = (0:dataobj.imgsize(3)-1)*zpixelsize + zedges(1) - padding(3) * zpixelsize + zpixelsize / 2;
-    dataobj.SZ = (zsigmaedges(1:end-1) + zsigmaedges(2:end))/2;
+    data = zeros(3, size(locdata,2));
+    data(1,:) = discretize(locdata(1,:),xedges) - 1;
+    data(2,:) = discretize(locdata(2,:),yedges) - 1;
+    if ( any(isnan(data(1,:))) || any(isnan(data(2,:))) ...
+            || min(data(1,:)) < dataobj.padding(1) ...
+            || max(data(1,:)) >= dataobj.imgsize(2) - dataobj.padding(1) ...
+            || min(data(2,:)) < dataobj.padding(2) ...
+            || max(data(2,:)) >= dataobj.imgsize(1) - dataobj.padding(2))
+        error('XY data out of range');
+    end
+    
+    ds = (dataobj.S(2) - dataobj.S(1))/2;
+    sigmaedges = [dataobj.S - ds, dataobj.S(end) + ds];
+    data(3,:) = discretize(locdata(3,:), sigmaedges) - 1;
+    if (any(isnan(data(3,:))))
+        error('Sigma out of range');
+    end
+    dataobj.data = uint32(data);
 end

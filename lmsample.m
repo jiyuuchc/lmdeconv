@@ -1,42 +1,39 @@
-function samples = lmsample(lmobj, iters, prev, skip, prior)
-% samples = lmdsample(locdata, iters, prev, skip)
+function samples = lmsample(lmobj, iters, varargin)
+% samples = lmdsample(locdata, iters, prev, ...)
 % Sample the posterior distribution on theta based on SMLM data
 %
 % Inputs -
 %   lmobj - Object returned by the lmdatainit() function
 %   iter - # of samples to be drawn
 %   prev - Optional. result from previos iteration. 
-%   skip - Optional. skipping samples, default 1
-%   prior - Dir prior. can be a scaler or a matrix.
+%   Optional parameters:
+%       'Skip' - Optional. skipping samples, default 1
+%       'Prior' - Dir prior. can be a scaler or a matrix.
 %
 % Outputs -
 %   samples - samples
 
-narginchk(2,5);
+parser = inputParser;
+isPosInt = @(p) validateattributes(p, {'numeric'},{'scalar','positive','integer'});
+addRequired(parser, 'lmobj', @(p) isstruct(p));
+addRequired(parser, 'iters', isPosInt);
+addOptional(parser, 'prev', [], @(p) validateattributes(p, {'numeric'},{'2d'}));
+addParameter(parser, 'Skip', 1, isPosInt);
+addParameter(parser, 'Prior', .5, @(p) isnumeric(p) && (isscalar(p) || ismatrix(p)));
+addParameter(parser, 'Quite', false, @(p) islogical(p) && isscalar(p));
+parse(parser, lmobj, iters, varargin{:});
 
-if (~exist('skip','var'))
-    skip = 1;
+prev = parser.Results.prev;
+prior = parser.Results.Prior;
+skip = parser.Results.Skip;
+
+if(isempty(prev))
+    prev = histimg(lmobj);
 else
-    if (~isscalar(skip))
-        error ('skip must be a scalar');
+    if ~ all(size(prev) == lmobj.imgsize)
+        error('sample size does not match lmobj data');
     end
 end
-
-if(~isscalar(iters))
-    error('iters must be a scalar');
-end
-
-if(~exist('prev','var') || isempty(prev))
-    prev = histimg(lmobj);
-end
-
-if (~exist('prior','var'))
-    prior = 1/2; % Jeffreys prior
-end
-if (~isscalar(prior) && numel(prior) ~= numel(prev))
-    error('Prior size does not match image');
-end
-
 
 samplesize = [size(prev) iters];
 samples = zeros(samplesize);
@@ -52,7 +49,7 @@ for i = 1:iters * skip
             samples(:,:,:,i/skip) = prev;
         end
     end
-    if (mod(i,1000) == 0)
-        disp(['finished ' int2str(i) ' iterations']);
+    if (mod(i,1000 * skip) == 0 && ~parser.Results.Quite)
+        disp(['finished ' int2str(i/skip) ' iterations']);
     end
 end
