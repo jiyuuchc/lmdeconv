@@ -16,7 +16,7 @@ In Matlab, run
 build
 ```
 ##### 2. Load data. 
-Read your particle data into a cell array (e.g., particles). Each cell stores one particle using a Nx3 array. Each row of array is (x, y, sigma). Sigma is an estimate of the localization error. Use consitent unit for all values. 
+Read your particle data into a cell array (e.g., particles). Each cell stores one particle using a Nx3 array. Each row of array is (x, y, sigma). Sigma is an estimate of the localization error. Use consistent unit for all values. 
 
 ##### 3. Pre-register against one particle (optional)
 ```
