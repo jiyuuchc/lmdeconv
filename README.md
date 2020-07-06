@@ -1,8 +1,8 @@
 ## lmdeconv
-The software implements a few algorithms for SMLM (single molecule localization microscopy) data analysis. 
-It includes a sampler, a function to perform MAP estiamtion of molecular distribution, and a particle fusion algorithm.
+The software implements a few algorithms for SMLM (single molecule localization microscopy) data. 
+Currently it includes a sampler, a function to perform MAP estiamtion of molecular distribution, and a particle fusion algorithm, which are described in:
 
-**Ref:** DOI: 10.1073/pnas.1912634116
+**Ref:** [DOI: 10.1073/pnas.1912634116](https://doi.org/10.1073/pnas.1912634116)
 
 ### Requirements
 Matlab with image processing and optimization toolbox. I've only tested on Linux (Debian) and Windows 10 (64bit).
