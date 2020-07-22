@@ -1,6 +1,6 @@
 function [newParticles, model, fval]=particleIter(particles, pixelSize, nsamples, varargin)
 % newParticles = particleIter(particles, pixelSize, nsamples, ...)
-% newParticles, model = particleIter(particles, pixelSize, nsamples, model, ...)
+% [newParticles, model] = particleIter(particles, pixelSize, nsamples, 'Model', model, ...)
 % Perform particle registration using SMLM data. This function can be
 % called multiple times to iteratively improve the registration
 % Input:
@@ -13,8 +13,11 @@ function [newParticles, model, fval]=particleIter(particles, pixelSize, nsamples
 %       'Scale': scale sigma by a factor, may improve convergence. default to 1.
 %       'BurnIn': # of samples as burn-in, default 2000
 %       'Skipping': # of skipped samples (to decrease correlation). default 5
+%       'FitFun': optimization routine: @fit_gradient (default), @fit_ps, @fit_global
+%       'Model': either a scalar (number of models) or a vector (model assignments) 
 % Output:
 %   newParticles: New particle coordinates with improved registration
+%   model: model assignments
 
 parser = inputParser;
 isnumericposscalar = @(p) isnumeric(p) && isscalar(p) && p > 0;
