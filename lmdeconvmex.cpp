@@ -59,6 +59,8 @@ void iter(double* newImg, const mxArray * data, const mxArray * img, const mxArr
                 }
             }
         }
+        
+        delete [] bins;
     }
 }
 
