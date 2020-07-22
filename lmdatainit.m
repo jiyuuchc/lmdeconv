@@ -41,7 +41,7 @@ if ~isstruct(template) % 2nd input is pixelsize
     psfs = cell(length(sigmaedges)-1,1);
     for i = 1:size(psfs,1)
         sigma = 0.5 /pixelsize * (sigmaedges(i) + sigmaedges(i+1));
-        psfhsize = round(sigma * 1.5);
+        psfhsize = round(sigma * 1.8);
         psfsize = psfhsize * 2 + 1;
         psfs{i} = fspecial('gaussian', psfsize, sigma);
     end
