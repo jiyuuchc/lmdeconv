@@ -6,7 +6,7 @@ function img = lmdeconv(lmobj, varargin)
 %   lmobj - Object returned by the lmdatainit() function
 %   iter - # of iterations
 %   prev - result from previos call of this function. Optional
-%   priot - Dirichlet prior, Optional.
+%   prior - Dirichlet prior, Optional.
 % Outputs -
 %   img - deconv img
 
@@ -16,7 +16,7 @@ addRequired(parser, 'lmobj', @(p) isstruct(p));
 addOptional(parser, 'iters', 100, isPosInt);
 addParameter(parser, 'Init', [], @(p) validateattributes(p, {'numeric'},{'2d'}));
 addParameter(parser, 'Prior', .5, @(p) isnumeric(p) && (isscalar(p) || ismatrix(p)));
-addParameter(parser, 'Quite', false, @(p) islogical(p) && isscalar(p));
+addParameter(parser, 'Quiet', false, @(p) islogical(p));
 parse(parser, lmobj, varargin{:});
 
 iters = parser.Results.iters;
@@ -32,7 +32,7 @@ for i = 1:iters
     else
         prev = lmdeconv3dmex(lmobj.data, prev, lmobj.psfs, lmobj.zpsfs, double(prior));
     end
-    if (mod(i,50) == 0 && ~ parser.Results.Quite)
+    if (mod(i,50) == 0 && ~ parser.Results.Quiet)
         disp(['finished ' int2str(i) ' iterations']);
     end
 end
