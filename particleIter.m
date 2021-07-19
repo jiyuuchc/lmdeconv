@@ -84,7 +84,7 @@ for m = 1:nModels
     l = zeros([size(s) length(obj.psfs)]);
     for k = 1:1000:nsamples
         nn = min(1000,nsamples-k+1);
-        samples = lmsample(obj, nn, s, 'Skip',skipping, 'Prior',prior, 'Quite', true);
+        samples = lmsample(obj, nn, s, 'Skip',skipping, 'Prior',prior, 'Quiet', true);
         s = samples(:,:,end);
 
         tmp = zeros(size(samples));

@@ -20,7 +20,7 @@ addRequired(parser, 'iters', isPosInt);
 addOptional(parser, 'prev', [], @(p) validateattributes(p, {'numeric'},{'2d'}));
 addParameter(parser, 'Skip', 1, isPosInt);
 addParameter(parser, 'Prior', .5, @(p) isnumeric(p) && (isscalar(p) || ismatrix(p)));
-addParameter(parser, 'Quite', false, @(p) islogical(p) && isscalar(p));
+addParameter(parser, 'Quiet', false, @(p) islogical(p));
 parse(parser, lmobj, iters, varargin{:});
 
 prev = parser.Results.prev;
@@ -49,7 +49,7 @@ for i = 1:iters * skip
             samples(:,:,:,i/skip) = prev;
         end
     end
-    if (mod(i,1000 * skip) == 0 && ~parser.Results.Quite)
+    if (mod(i,1000 * skip) == 0 && ~parser.Results.Quiet)
         disp(['finished ' int2str(i/skip) ' iterations']);
     end
 end
