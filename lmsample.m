@@ -19,7 +19,7 @@ addRequired(parser, 'lmobj', @(p) isstruct(p));
 addRequired(parser, 'iters', isPosInt);
 addOptional(parser, 'prev', [], @(p) validateattributes(p, {'numeric'},{'2d'}));
 addParameter(parser, 'Skip', 1, isPosInt);
-addParameter(parser, 'Prior', .5, @(p) isnumeric(p) && (isscalar(p) || ismatrix(p)));
+addParameter(parser, 'Prior', 1.0, @(p) isnumeric(p) && (isscalar(p) || ismatrix(p)));
 addParameter(parser, 'Quiet', false, @(p) islogical(p));
 parse(parser, lmobj, iters, varargin{:});
 

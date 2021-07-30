@@ -9,7 +9,7 @@ function dataobj = lmdatainit(locdata, template, varargin)
 %   template - create new dataobj using the pixel arrangement of and old
 %              dataobj template
 %   Optional parameters (these are ignored in the 2nd calling form):
-%       padding - Optional. default to half of the biggest psf. 
+%       padding - Optional. default to half of the biggest psf.
 %       numsigmabins - Optional. default 50.
 %
 % Outputs -
@@ -30,12 +30,12 @@ end
 
 if ~isstruct(template) % 2nd input is pixelsize
     pixelsize = template;
-    
+
     xedges = floor(min(locdata(1,:))/pixelsize)*pixelsize:pixelsize:max(locdata(1,:))+pixelsize;
     yedges = floor(min(locdata(2,:))/pixelsize)*pixelsize:pixelsize:max(locdata(2,:))+pixelsize;
     xbins = discretize(locdata(1,:),xedges);
     ybins = discretize(locdata(2,:),yedges);
-    
+
     [sigmabins, sigmaedges] = discretize(double(locdata(3,:)),parser.Results.nsigmabins);
 
     psfs = cell(length(sigmaedges)-1,1);
@@ -43,9 +43,11 @@ if ~isstruct(template) % 2nd input is pixelsize
         sigma = 0.5 /pixelsize * (sigmaedges(i) + sigmaedges(i+1));
         psfhsize = round(sigma * 1.8);
         psfsize = psfhsize * 2 + 1;
-        psfs{i} = fspecial('gaussian', psfsize, sigma);
+        psf = fspecial('gaussian', psfsize, sigma);
+        psf = psf / max(psf(:)) * 8; % avoid numerical underflow
+        psfs{i} = psf;
     end
-    
+
     padding = parser.Results.padding;
     if isempty(padding)
         padding = [psfhsize, psfhsize];
@@ -59,7 +61,7 @@ if ~isstruct(template) % 2nd input is pixelsize
     data(1,:) = xbins + padding(1) - 1;
     data(2,:) = ybins + padding(2) - 1;
     data(3,:) = sigmabins - 1;
-    
+
     dataobj = struct();
     dataobj.data = uint32(data);
     dataobj.psfs = psfs;
@@ -84,7 +86,7 @@ else % 2nd input is a dataobj
             || max(data(2,:)) >= dataobj.imgsize(1) - dataobj.padding(2))
         error('XY data out of range');
     end
-    
+
     ds = (dataobj.S(2) - dataobj.S(1))/2;
     sigmaedges = [dataobj.S - ds, dataobj.S(end) + ds];
     data(3,:) = discretize(locdata(3,:), sigmaedges) - 1;
