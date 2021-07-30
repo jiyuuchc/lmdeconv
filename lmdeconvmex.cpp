@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <omp.h>
+#include <float.h>
 
 using namespace std;
 static void init() __attribute__ ((constructor));
@@ -31,7 +32,7 @@ void iter(double* newImg, const mxArray * data, const mxArray * img, const mxArr
         size_t psfHSize = (psfSize-1)/2;
 
         double * bins = new double[psfSize*psfSize];
-        
+
         int32_t row = dataBuf[i*3+1] - psfHSize;
         int32_t col = dataBuf[i*3] - psfHSize;
 
@@ -59,23 +60,22 @@ void iter(double* newImg, const mxArray * data, const mxArray * img, const mxArr
                 }
             }
         }
-        
         delete [] bins;
     }
 }
 
 // Input -
-// #1 - UINT32 Data. 3XN array of SMLM data. 
+// #1 - UINT32 Data. 3XN array of SMLM data.
 //      row 1 is x, row 2 is y, row 3 is a index to psf array (see input #3)
 // #2 - Image from last itration
-// #3 - PSFs. Cell array. Eepresenting N different kinds of PSFs with varying localization accuracy. 
-// #4 - Prior. Scalar or array. Optional. 
+// #3 - PSFs. Cell array. Eepresenting N different kinds of PSFs with varying localization accuracy.
+// #4 - Prior. Scalar or array. Optional.
 // Output -
 // #1 - Image result from new iteration.
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
     const mwSize *imgDims = mxGetDimensions(prhs[1]);
-    if (nrhs != 3 && nrhs != 4) {
+    if (nrhs != 3) {
         mexErrMsgTxt("lmdeconvmex: incorrect number of inputs");
     }
 
@@ -84,23 +84,4 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     fill(newImg, newImg + mxGetNumberOfElements(plhs[0]), 0);
 
     iter(newImg, prhs[0], prhs[1], prhs[2]);
-
-    if (nrhs == 4) {
-        if (mxIsScalar(prhs[3])) {
-            for (int i = 0 ; i < mxGetNumberOfElements(plhs[0]); i++) {
-                newImg[i] += mxGetScalar(prhs[3]) - 1.0;
-                if (newImg[i] < 0) {
-                    newImg[i] = 0;
-                }
-            }
-        } else {
-            mxDouble * prior = mxGetDoubles(prhs[3]);
-            for (int i = 0; i < mxGetNumberOfElements(plhs[0]); i ++) {
-                newImg[i] += prior[i] - 1.0;
-                if (newImg[i] < 0) {
-                    newImg[i] = 0;
-                }
-            }
-        }
-    }
 }

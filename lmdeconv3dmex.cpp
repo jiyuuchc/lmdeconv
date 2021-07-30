@@ -73,6 +73,9 @@ void iter3d(double* newImg, const double* hiImg, const size_t *dims, const uint3
 // #1 - Image result from new iteration.
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
+    if (nrhs != 4) {
+        mexErrMsgTxt("lmdeconvmex: incorrect number of inputs");
+    }
     const mwSize imgND = mxGetNumberOfDimensions(prhs[1]); // image dimension
 
     const mwSize *datadims = mxGetDimensions(prhs[0]);
@@ -92,22 +95,22 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     //mexPrintf("%d , %d, %d\n", imgdims[0], imgdims[1], imgdims[2]);
     iter3d(newImg, img, imgdims, data, datadims[1], psfxy, psfxydims[0], psfz, psfzdims[0]);
 
-    if (nrhs == 5) {
-        if (mxIsScalar(prhs[4])) {
-            for (int i = 0 ; i < mxGetNumberOfElements(plhs[0]); i++) {
-                newImg[i] += mxGetScalar(prhs[4]) - 1.0;
-                if (newImg[i] < 0) {
-                    newImg[i] = 0;
-                }
-            }
-        } else {
-            mxDouble * prior = mxGetDoubles(prhs[4]);
-            for (int i = 0; i < mxGetNumberOfElements(plhs[0]); i ++) {
-                newImg[i] += prior[i] - 1.0;
-                if (newImg[i] < 0) {
-                    newImg[i] = 0;
-                }
-            }
-        }
-    }
+//     if (nrhs == 5) {
+//         if (mxIsScalar(prhs[4])) {
+//             for (int i = 0 ; i < mxGetNumberOfElements(plhs[0]); i++) {
+//                 newImg[i] += mxGetScalar(prhs[4]) - 1.0;
+//                 if (newImg[i] < 0) {
+//                     newImg[i] = 0;
+//                 }
+//             }
+//         } else {
+//             mxDouble * prior = mxGetDoubles(prhs[4]);
+//             for (int i = 0; i < mxGetNumberOfElements(plhs[0]); i ++) {
+//                 newImg[i] += prior[i] - 1.0;
+//                 if (newImg[i] < 0) {
+//                     newImg[i] = 0;
+//                 }
+//             }
+//         }
+//    }
 }
