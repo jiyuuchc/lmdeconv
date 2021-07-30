@@ -5,7 +5,7 @@ function [newParticles, model, fval]=particleIter(particles, pixelSize, nsamples
 % called multiple times to iteratively improve the registration
 % Input:
 %   particles: cell array of particle data (Nx3 matrix);Discretized.
-%   pixelSize : pixelsize used for theta samples. 
+%   pixelSize : pixelsize used for theta samples.
 %   nsamples: number of samples drawn
 %   Optional Parameters:
 %       'Target': If specified, register all particles against a single
@@ -14,29 +14,24 @@ function [newParticles, model, fval]=particleIter(particles, pixelSize, nsamples
 %       'BurnIn': # of samples as burn-in, default 2000
 %       'Skipping': # of skipped samples (to decrease correlation). default 5
 %       'FitFun': optimization routine: @fit_gradient (default), @fit_ps, @fit_global
-%       'Model': either a scalar (number of models) or a vector (model assignments) 
+%       'Model': either a scalar (number of models) or a vector (model assignments)
 % Output:
 %   newParticles: New particle coordinates with improved registration
 %   model: model assignments
 
 parser = inputParser;
+parser.KeepUnmatched = true;
 isnumericposscalar = @(p) isnumeric(p) && isscalar(p) && p > 0;
 addRequired(parser, 'particles', @(p) iscell(p));
 addRequired(parser, 'pixelSize', isnumericposscalar);
 addRequired(parser, 'nsamples', isnumericposscalar);
 addParameter(parser, "Model", 1, @(p) isvector(p) || isnumericposscalar(p));
 addParameter(parser, 'Scale', 1, isnumericposscalar);
-addParameter(parser, 'Prior', 0.5, isnumericposscalar);
-addParameter(parser, 'BurnIn', 2000,isnumericposscalar);
-addParameter(parser, 'Skipping', 5, isnumericposscalar);
+
 addParameter(parser, 'Target', [], @(p) ismatrix(p) && size(p,2) == 3);
 addParameter(parser, 'FitFun', @fit_gradient);
 parse(parser, particles, pixelSize, nsamples, varargin{:});
 
-skipping = parser.Results.Skipping;
-burn_in = parser.Results.BurnIn;
-prior = parser.Results.Prior;
-scale = parser.Results.Scale;
 target = parser.Results.Target;
 
 if (isscalar(parser.Results.Model))
@@ -65,40 +60,19 @@ for m = 1:nModels
         alldata = [target; alldata];
     end
 
-    alldata(3,:)=alldata(3,:)*scale;
+    alldata(3,:)=alldata(3,:) * parser.Results.Scale;
     obj = lmdatainit(alldata, lmobj_all);
 
     if (~isempty(target) && nModels == 1)
         obj.data  = obj.data(:,1:size(target,1)); %only keep target for sampling
     end
-    
+
     if (nModels > 1)
         disp(['Model #' int2str(m)]);
     end
-    
-    tic;
-    disp('burn in...');
-    s = lmsample(obj,1,'skip',burn_in,'Prior',prior);
-    disp('burn in...done');
-    disp('Sampling...');
-    l = zeros([size(s) length(obj.psfs)]);
-    for k = 1:1000:nsamples
-        nn = min(1000,nsamples-k+1);
-        samples = lmsample(obj, nn, s, 'Skip',skipping, 'Prior',prior, 'Quiet', true);
-        s = samples(:,:,end);
 
-        tmp = zeros(size(samples));
-        for j = 1:length(obj.psfs)
-            psf = obj.psfs{j};
-            for i = 1:size(samples,3)
-                tmp(:,:,i) = filter2(psf, samples(:,:,i));
-            end
-            l(:,:,j) = l(:,:,j) + mean(log(tmp),3);
-        end
-        disp(['Drawn ' int2str(k+999) ' samples.']);
-    end
-    template{m} = l;
-    disp('Sampling...done');
+    tic;
+    template{m} = intloglikelihood(obj, nsamples, parser.Unmatched);
     toc;
 end
 
@@ -118,7 +92,7 @@ for i = 1:length(particles)
             mbest = m;
         end
     end
-    fval(i) = vmin; 
+    fval(i) = vmin;
     newParticles{i}(:,1:2) = tbest.transformPointsForward(curdata(:,1:2));
     model(i) = mbest;
     if (mod(i, 100) == 0)

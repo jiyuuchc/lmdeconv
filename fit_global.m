@@ -15,3 +15,4 @@ dt = p(3);
 t = affine2d([cos(dt) sin(dt) 0; -sin(dt) cos(dt) 0; p(1) p(2) 1]);
 d2 = t.transformPointsForward(data(:,1:2));
 ll = - sum(interp3(X, Y, Z, V, d2(:,1), d2(:,2), data(:,3), 'linear', log(eps(0))));
+ll = gather(ll);
